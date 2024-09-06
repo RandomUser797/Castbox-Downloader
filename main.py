@@ -7,6 +7,9 @@ import json
 import time
 
 
+VERSION = "1.1"
+
+
 def load_db():
     try:
         with open("setting.json") as file:
@@ -37,7 +40,7 @@ path = setting["path"]
 
 def main(page: Page):
     page.title = "Castbox Downloader"
-    page.window.height = 520
+    page.window.height = 560
     page.window.width = 320
     page.window.resizable = False
     page.window.maximizable = False
@@ -52,7 +55,7 @@ def main(page: Page):
     github_icon = IconButton(
         content=github_img,
         url="https://github.com/TKZ700/Castbox-Downloader",
-        tooltip="لینک گیتهاب پروژه"
+        tooltip="Github project"
     )
 
     title_text = Text(
@@ -65,33 +68,92 @@ def main(page: Page):
     )
 
     def download_episode(url, path):
-        response = requests.get(url)
-        if response.status_code == 200:
-            page = BeautifulSoup(response.content, "html.parser")
-            ep_name = page.find("h1", "trackinfo-title")["title"]
-            ep_name = ep_name.replace(":", "_")
-            ep_name = ep_name.replace("?", "")
-            ep_name = ep_name.replace("/", "")
-            ep_name = ep_name.replace("\\", "")
-            cover_div = page.find("div", "coverImgContainer")
-            cover_url = cover_div.find("img")["src"]
-            cover = requests.get(cover_url)
-            audio_tag = page.find("audio")
-            source_tag = audio_tag.find("source")
-            audio_url = source_tag["src"]
-            print(f"Downloading episode: {ep_name}")
-            audio = requests.get(audio_url)
-            if audio.status_code == 200:
-                filename = f"{path}{ep_name}.mp3"
-                with open(filename, "wb") as file:
-                    file.write(audio.content)
-                    print(f"Successfully downloaded: {ep_name}")
-                set_cover(filename, cover.content)
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                page_html = BeautifulSoup(response.content, "html.parser")
+                ep_name = page_html.find("h1", "trackinfo-title")["title"]
+                ep_name = ep_name.replace(":", "_")
+                ep_name = ep_name.replace("?", "")
+                ep_name = ep_name.replace("/", "")
+                ep_name = ep_name.replace("\\", "")
+                cover_div = page_html.find("div", "coverImgContainer")
+                cover_url = cover_div.find("img")["src"]
+                cover = requests.get(cover_url)
+                audio_tag = page_html.find("audio")
+                source_tag = audio_tag.find("source")
+                audio_url = source_tag["src"]
+                episode_text.value = f"Downloading Episode: {ep_name}"
+                episode_text.visible = True
+                page.update()
+                audio = requests.get(audio_url, stream=True)
+                if audio.status_code == 200:
+                    ep_size = int(audio.headers.get(
+                        "Content-Length", 0)) / (1024 * 1024)
+                    episode_text.value = f"Downloading Episode: {ep_name}\nEpisode size: {ep_size:.2f} MB"
+                    page.update()
+                    filename = f"{path}{ep_name}.mp3"
+                    with open(filename, "wb") as file:
+                        file.write(audio.content)
+                    set_cover(filename, cover.content)
+                    download_finished = SnackBar(
+                        content=Text("Download finished.", font_family="Rubik",
+                                     weight=FontWeight.W_500))
+                    page.overlay.append(download_finished)
+                    download_finished.open = True
+                    download_button.disabled = False
+                    download_button.tooltip = ""
+                    input_url.value = ""
+                    input_url.disabled = False
+                    page.update()
+                    episode_text.value = f"Successfully downloaded: {ep_name}"
+                    episode_text.visible = True
+                    page.update()
+                    time.sleep(3)
+                    episode_text.value = ""
+                    episode_text.visible = False
+                    page.update()
+                else:
+                    episode_text.value = f"Connection error code: {audio.status_code}"
+                    episode_text.color = "red"
+                    episode_text.visible = True
+                    page.update()
+                    time.sleep(3)
+                    episode_text.value = ""
+                    episode_text.color = "green"
+                    episode_text.visible = False
+                    page.update()
             else:
-                print(f"Connection error code: {response.status_code}")
+                episode_text.value = f"Connection error code: {response.status_code}"
+                episode_text.color = "red"
+                episode_text.visible = True
+                page.update()
+                time.sleep(3)
+                episode_text.value = ""
+                episode_text.color = "green"
+                episode_text.visible = False
+                page.update()
+        except Exception as e:
+            episode_text.value = f"Error: {e}"
+            episode_text.color = "red"
+            episode_text.visible = True
+            page.update()
+            time.sleep(3)
+            episode_text.value = ""
+            episode_text.color = "green"
+            episode_text.visible = False
+            page.update()
 
         else:
-            print(f"Connection error code: {response.status_code}")
+            playlist_text.value = f"Connection error code: {response.status_code}"
+            playlist_text.color = "red"
+            playlist_text.visible = True
+            page.update()
+            time.sleep(3)
+            playlist_text.value = ""
+            playlist_text.color = "green"
+            playlist_text.visible = False
+            page.update()
 
     def set_cover(file_path, cover):
         audiofile = eyed3.load(file_path)
@@ -103,54 +165,96 @@ def main(page: Page):
         audiofile.tag.save(version=eyed3.id3.ID3_V2_3)
 
     def download_playlist(url):
-        response = requests.get(url)
-        if response.status_code == 200:
-            page = BeautifulSoup(response.content, "html.parser")
-            playlist_name = page.find("h1", "ch_feed_info_title")["title"]
-            episodes = page.find_all("div", class_="ep-item-con")
-            print(f"Downloading Playlist: {playlist_name}")
-            for episode in episodes:
-                episode_url = "https://castbox.fm/" + episode.find("a")["href"]
-                download_episode(episode_url, path + f"/{playlist_name}/")
-            print(f"Download finished: {playlist_name}")
-        else:
-            print(f"Connection error code: {response.status_code}")
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                page_html = BeautifulSoup(response.content, "html.parser")
+                playlist_name = page_html.find(
+                    "h1", "ch_feed_info_title")["title"]
+                episodes = page_html.find_all("div", class_="ep-item-con")
+                playlist_text.value = f"Downloading Playlist: {playlist_name}\nPlaylist Episodes: {len(episodes)}"
+                playlist_text.visible = True
+                page.update()
+                for episode in episodes:
+                    episode_url = "https://castbox.fm/" + \
+                        episode.find("a")["href"]
+                    download_episode(episode_url, path + f"/{playlist_name}/")
+                download_finished = SnackBar(
+                    content=Text("Download finished.", font_family="Rubik",
+                                 weight=FontWeight.W_500))
+                page.overlay.append(download_finished)
+                download_finished.open = True
+                download_button.disabled = False
+                download_button.tooltip = ""
+                input_url.value = ""
+                input_url.disabled = False
+                playlist_text.value = f"Download finished: {playlist_name}"
+                playlist_text.visible = True
+                page.update()
+                time.sleep(3)
+                playlist_text.value = ""
+                playlist_text.visible = False
+                page.update()
+            else:
+                playlist_text.value = f"Connection error code: {response.status_code}"
+                playlist_text.color = "red"
+                playlist_text.visible = True
+                page.update()
+                time.sleep(3)
+                playlist_text.value = ""
+                playlist_text.color = "green"
+                playlist_text.visible = False
+                page.update()
+        except Exception as e:
+            playlist_text.value = f"Erorr: {e}"
+            playlist_text.color = "red"
+            playlist_text.visible = True
+            page.update()
+            time.sleep(3)
+            playlist_text.value = ""
+            playlist_text.color = "green"
+            playlist_text.visible = False
+            page.update()
 
     def handle_download(e):
-        try:
-            download_button.disabled = True
-            download_button.tooltip = "Downloading the last one..."
-            page.update()
-            url = input_url.value
-            if url.startswith("https://castbox.fm"):
-                if url.startswith("https://castbox.fm/va") or url.startswith(
-                    "https://castbox.fm/channel"
-                ):
-                    download_playlist(url)
-                elif url.startswith("https://castbox.fm/vb") or url.startswith(
-                    "https://castbox.fm/episode"
-                ):
-                    download_episode(url, path)
-                else:
-                    input_url.error_text = "Please enter a Playlist/Episode URL."
-                    page.update()
-            else:
-                input_url.error_text = "Invalid URL."
+        download_button.disabled = True
+        input_url.disabled = True
+        download_button.tooltip = "Downloading the last one..."
+        page.update()
+        url = input_url.value
+        if url.startswith("https://castbox.fm"):
+            if url.startswith("https://castbox.fm/va") or url.startswith(
+                "https://castbox.fm/channel"
+            ):
+                playlist_text.value = "Loading Data..."
+                playlist_text.visible = True
                 page.update()
-        finally:
-            input_url.value = ""
+                download_playlist(url)
+            elif url.startswith("https://castbox.fm/vb") or url.startswith(
+                "https://castbox.fm/episode"
+            ):
+                episode_text.value = "Loading Data..."
+                episode_text.visible = True
+                page.update()
+                download_episode(url, path)
+            else:
+                input_url.error_text = "Please enter a Playlist/Episode URL."
+                download_button.disabled = False
+                download_button.tooltip = ""
+                input_url.value = ""
+                input_url.disabled = False
+                page.update()
+        else:
+            input_url.error_text = "Invalid URL."
             download_button.disabled = False
-            download_finished = SnackBar(
-                content=Text("Download finished.", font_family="Rubik",
-                             weight=FontWeight.W_500))
-            page.overlay.append(download_finished)
-            download_finished.open = True
-            page.update()
+            download_button.tooltip = ""
+            input_url.value = ""
+            input_url.disabled = False
             page.update()
 
     def save_new_path(e: FilePickerResultEvent):
         if e.path:
-            setting["path"] = e.path + "/"
+            setting["path"] = e.path + "\\"
             save_db(setting)
             current_path.value = f"Path: {e.path}"
             success = SnackBar(
@@ -185,6 +289,7 @@ def main(page: Page):
         theme_button = IconButton(
             icon=icons.LIGHT_MODE_ROUNDED,
             selected_icon=icons.DARK_MODE_ROUNDED,
+            tooltip="Change Theme",
             style=ButtonStyle(
                 color={"": colors.WHITE, "selected": colors.BLACK}),
             on_click=change_theme,)
@@ -192,6 +297,8 @@ def main(page: Page):
     bar = AppBar(
         bgcolor="#ff6a00",
         leading=github_icon,
+        title=Container(bgcolor="#66000000", padding=3, border_radius=5, content=Text(
+            f"v {VERSION}", color="white", font_family="Rubik", weight=FontWeight.W_500)),
         actions=[
             theme_button
         ]
@@ -241,8 +348,17 @@ def main(page: Page):
 
     download_col = Column()
 
+    playlist_text = Text(
+        font_family="Rubik", weight=FontWeight.W_500, color="green")
+
+    episode_text = Text(
+        font_family="Rubik", weight=FontWeight.W_500, color="green")
+
+    playlist_text.visible = False
+    episode_text.visible = False
+
     page.add(bar, Container(height=5), title_text,
-             Container(height=10), input_url, Container(), buttons_column, download_col, file_picker, current_path)
+             Container(height=10), input_url, Container(), playlist_text, episode_text, buttons_column, download_col, file_picker, current_path)
 
 
 if __name__ == "__main__":
