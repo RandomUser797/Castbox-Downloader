@@ -41,7 +41,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Setup Flutter ${{ env.FLUTTER_VERSION }}
-      uses: subosito/flutter-action@v2
+      uses: subosito/flutter-action@v2.16.0
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
 
@@ -83,7 +83,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Setup Flutter ${{ env.FLUTTER_VERSION }}
-      uses: subosito/flutter-action@v2
+      uses: subosito/flutter-action@v2.16.0
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
 
@@ -118,7 +118,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Setup Flutter ${{ env.FLUTTER_VERSION }}
-      uses: subosito/flutter-action@v2
+      uses: subosito/flutter-action@v2.16.0
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
 
@@ -161,7 +161,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Setup Flutter ${{ env.FLUTTER_VERSION }}
-      uses: subosito/flutter-action@v2
+      uses: subosito/flutter-action@v2.16.0
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
 
@@ -196,7 +196,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Setup Flutter ${{ env.FLUTTER_VERSION }}
-      uses: subosito/flutter-action@v2
+      uses: subosito/flutter-action@v2.16.0
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
 
@@ -237,7 +237,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Setup Flutter ${{ env.FLUTTER_VERSION }}
-      uses: subosito/flutter-action@v2
+      uses: subosito/flutter-action@v2.16.0
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
 
