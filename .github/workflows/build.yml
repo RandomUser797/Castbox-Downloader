@@ -122,6 +122,16 @@ jobs:
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
 
+    # Install the .NET Core workload
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '6.0.x'
+
+    # Add  MsBuild to the PATH: https://github.com/microsoft/setup-msbuild
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v1.1
+
     - name: Flet Build Windows
       run: |
         flutter config --no-analytics
