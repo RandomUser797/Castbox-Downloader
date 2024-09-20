@@ -3,3 +3,5 @@ beautifulsoup4
 eyed3
 requests
 requests-html
+pyinstaller
+pillow
