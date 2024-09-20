@@ -3,6 +3,8 @@ beautifulsoup4
 eyed3
 requests
 requests-html
+lxml_html_clean
+lxml[html_clean]
 lxml
 pyinstaller
 pillow
