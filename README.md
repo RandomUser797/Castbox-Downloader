@@ -17,3 +17,5 @@ To run the app:
 ```
 flet run
 ```
+
+You can also build the app by looking at the (pyinstaller documentation)[https://pyinstaller.org/]
