@@ -1,5 +1,6 @@
 from flet import *
 import requests
+from requests_html import HTMLSession
 from bs4 import BeautifulSoup
 import eyed3
 from eyed3.id3.frames import ImageFrame
@@ -166,9 +167,11 @@ def main(page: Page):
 
     def download_playlist(url):
         try:
-            response = requests.get(url)
+            session = HTMLSession()
+            response = session.get(url)
+            response.html.render()
             if response.status_code == 200:
-                page_html = BeautifulSoup(response.content, "html.parser")
+                page_html = BeautifulSoup(response.html.html, "html.parser")
                 playlist_name = page_html.find(
                     "h1", "ch_feed_info_title")["title"]
                 episodes = page_html.find_all("div", class_="ep-item-con")
